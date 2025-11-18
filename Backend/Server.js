@@ -1,0 +1,37 @@
+import express from 'express'
+import dotenv from 'dotenv'
+import cors from 'cors'
+import connectDB from './db.js'
+import auth from './routes/auth.route.js'
+import query from './routes/query.route.js'
+import dashboard from './routes/dashboard.route.js'
+import cookieParser from "cookie-parser";
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 7777;
+
+
+//middlewares
+app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
+
+
+// Routes
+app.use("/api/auth", auth);
+app.use("/api/query", query);
+app.use("/api/dashboard", dashboard);
+
+
+
+app.get('/', (req, res) => {
+  res.send('Server is running');
+})
+
+
+app.listen(PORT, async() => {
+  await connectDB();
+  console.log(`Server started on port ${PORT}`);
+}
+)

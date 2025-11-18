@@ -1,0 +1,9 @@
+POST http://localhost:7777/api/auth/profile/create HTTP/1.1
+content-type: application/json
+
+{
+    "username": "sample",
+    "email": "example@exampl.com",
+    "password": "password",
+    "role": "teacher"
+}
