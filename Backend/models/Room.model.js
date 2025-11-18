@@ -2,15 +2,18 @@ import {Schema, model} from "mongoose";
 
 
 const Room = new Schema({
-    Block: {
-        type: ["Academic Block 1", "Academic Block 2", "Multipurpose Block"]
+    block: {
+        type: String,
+        enum:["Academic Block 1", "Academic Block 2", "Multipurpose Block"],
+        required:true
     },
     number :{
         type:String,
         required : true 
     },
     floor: {
-        type: ["Ground", "1st", "2nd", "3rd", "4th", "5th"],
+        type: String,
+        enum:["Ground", "1st", "2nd", "3rd", "4th", "5th"],
         required: true,
     }
 }, {timestamps: true});

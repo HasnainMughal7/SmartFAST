@@ -15,8 +15,15 @@ const User = new Schema({
         required:true
     },
     role : {
-        type: ["admin", "teacher", "maintainer"],
+        type: String,
+        enum:["admin", "teacher", "maintainer"],
         required:true
+    },
+    queries: {
+        type: [Schema.Types.ObjectId],
+        ref: "Query",
+        required: false,
+        default: []
     }
 }, {timestamps: true});
 

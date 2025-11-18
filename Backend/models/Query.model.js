@@ -2,14 +2,15 @@ import {Schema, model} from "mongoose";
 
 
 const Query = new Schema({
-    userId: {
+    userID: {
         type:Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
     category: {
-      type:["Urgent", "Moderate"],
-        default: "Moderate"
+      type:String,
+      enum:["Urgent", "Moderate"],
+    default: "Moderate"
     },
     status : {
         type : ["Pending", "In Progress", "Completed"],

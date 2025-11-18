@@ -1,12 +1,13 @@
 import User from "../models/User.model.js";
-import { setAuthCookie } from "../middlewares/authMiddleware.js"; 
+import { setAuthCookie } from "../middlewares/authMiddleware.js";
+import jwt from "jsonwebtoken"; 
 import bcrypt from 'bcryptjs';
+import { InternalServerError } from "../Errors/error.js";
 
 const validate = (username, password) => {
     if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
         return false;
     }
-
     else if (username.includes(" ")) {
         return false;
     }    
@@ -17,19 +18,19 @@ const validate = (username, password) => {
     return true;
 }
 
-export const createProfile = async (req, res, next) => {
+export const createProfile = async (Request, Response, Next) => {
     console.log("POST /api/auth/profile/create");
-    const { username, password, email, role } = req.body;
+    const { username, password, email, role } = Request.body;
     
     // 1. Input Validation
     if (!validate(username, password)) {
-        return res.status(400).json({ message: "Invalid input: Username cannot contain spaces and password must be at least 8 characters." });
+        return Response.status(400).json({ message: "Invalid input: Username cannot contain spaces and password must be at least 8 characters." });
     }
 
     try {
         const existingUser = await User.findOne({ username });
         if (existingUser) {
-            return res.status(409).json({ message: "Username already exists." });
+            return Response.status(409).json({ message: "Username already exists." });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -38,58 +39,70 @@ export const createProfile = async (req, res, next) => {
         const user = await User.create({
             username,
             password: hashedPassword, // Store the HASHED password
-            role: role || "",
+            role,
             email
         });
         const payload = { userId: user._id, role: user.role };
-        setAuthCookie(res, payload);
-        res.status(201).json({ 
+        setAuthCookie(Response, payload);
+        Response.status(201).json({ 
             message: "Profile created successfully and logged in.",
             user: { id: user._id, username: user.username, role: user.role }
         });
 
     } catch (error) {
         console.error("Error creating profile:", error);
-        res.status(500).json({ message: "Internal Server Error during profile creation." });
+        Response.status(500).json({ message: "Internal Server Error during profile creation." });
     }
 }
 
 
-export const updatePassword = async (req, res, next) => {
-    // Assumes req.user is set by authenticateJWT middleware
-    const userId = req.user?.userId; 
-    const { newPassword } = req.body; // Use 'newPassword' to avoid confusion
-
-    if (!userId) {
-        // This should not happen if authenticateJWT runs first, but is a safety check
-        return res.status(401).json({ message: "Authentication required." });
+export const updatePassword = async (Request, Response) => {
+    const { username,password } = Request.body;
+    if (!newPassword || password.length < 8) {
+        return Response.status(400).json({ message: "New password must be at least 8 characters long." });
     }
-    
-    // Perform password validation here too (e.g., minimum length)
-    if (!newPassword || newPassword.length < 8) {
-        return res.status(400).json({ message: "New password must be at least 8 characters long." });
-    }
-
     try {
-        // 1. Hash the new password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
-        
-        // 2. Find and update the user in the database
-        const result = await User.findByIdAndUpdate(userId, 
-            { password: hashedPassword }, 
-            { new: true, runValidators: true } // Return the updated document
-        );
-
-        if (!result) {
-            return res.status(404).json({ message: "User not found." });
+        const user = await User.findOne({username});
+        if(user) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            const result = await User.findByIdAndUpdate(user.id, 
+                { password: hashedPassword }, 
+                { new: true, runValidators: true }
+            );
+            if (!result) {
+                return Response.status(404).json({ message: "User not found." });
+            }
+            return Response.status(200).json({ message: "Password updated successfully." });
         }
-
-        // 3. Inform the user
-        res.status(200).json({ message: "Password updated successfully." });
+        return Response.status(404).json({message: "User not found!"});
 
     } catch (error) {
         console.error("Error updating password:", error);
-        res.status(500).json({ message: "Internal Server Error during password update." });
+        InternalServerError(Response);
+    }
+}
+
+
+export const login = async(Request,Response)=>{
+    console.log("POST /api/auth/login");
+
+    const {username,password} = Request.body;
+
+    try {
+        const user = await User.findOne({username});
+        if(user) {
+            const isvalid = await bcrypt.compare(password, user.password);
+            if(isvalid) {
+                setAuthCookie(Response,user._id);
+                return Response.status(200).json({username, userID: user._id});
+            }
+            else {
+                return Response.status(401).json({message: "Invalid Credentials!"})
+            }
+        }
+        return Response.status(401).json({message: "Invalid Credentials!"})
+     } catch (error) {
+        Response.status(500).json({message: "Internal Server Error!"})
     }
 }
