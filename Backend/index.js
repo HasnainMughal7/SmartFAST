@@ -5,6 +5,7 @@ import connectDB from './db/db.js'
 import auth from './routes/auth.route.js'
 import query from './routes/query.route.js'
 import dashboard from './routes/dashboard.route.js'
+import message from "./routes/mesage.route.js";
 import cookieParser from "cookie-parser";
 dotenv.config();
 
@@ -22,7 +23,7 @@ app.use(cookieParser());
 app.use("/api/auth", auth);
 app.use("/api/query", query);
 app.use("/api/dashboard", dashboard);
-
+app.use("/api/message", message);
 
 
 app.get('/', (Request, Response) => {
@@ -31,6 +32,6 @@ app.get('/', (Request, Response) => {
 
 
 app.listen(PORT, async() => {
+  console.log("Server started on port",PORT);
   await connectDB();
-  console.log(`Server started on port`,PORT);
 })

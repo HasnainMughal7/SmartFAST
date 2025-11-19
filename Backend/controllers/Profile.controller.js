@@ -1,8 +1,9 @@
 import User from "../models/User.model.js";
-import { setAuthCookie } from "../middlewares/authMiddleware.js";
+import { setAuthCookie,clearAuthCookie } from "../middlewares/authMiddleware.js";
 import jwt from "jsonwebtoken"; 
 import bcrypt from 'bcryptjs';
 import { InternalServerError } from "../Errors/error.js";
+
 
 const validate = (username, password) => {
     if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
@@ -14,7 +15,6 @@ const validate = (username, password) => {
     else if (password.length < 8) {
         return false;
     }
-
     return true;
 }
 
@@ -35,7 +35,6 @@ export const createProfile = async (Request, Response, Next) => {
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        
         const user = await User.create({
             username,
             password: hashedPassword, // Store the HASHED password
@@ -83,18 +82,30 @@ export const updatePassword = async (Request, Response) => {
     }
 }
 
-
+export async function deleteProfile(Request, Response) {
+    const {id} = Request.params;
+    // console.log("id: ", id);
+    try {
+        await User.findByIdAndDelete(id);
+        Response.status(200).json({message: "User deleted successfully!"});
+        
+    } catch (error) {
+        // console.log("Error!!!")
+        InternalServerError(Response, error);
+    }
+}
 export const login = async(Request,Response)=>{
     console.log("POST /api/auth/login");
+    const {username,password} = Request.body; // Username + Password
+    console.log("Login attempt for username:", username, "with password:", password);
+    if(username || password) {
 
-    const {username,password} = Request.body;
-
-    try {
-        const user = await User.findOne({username});
-        if(user) {
-            const isvalid = await bcrypt.compare(password, user.password);
-            if(isvalid) {
-                setAuthCookie(Response,user._id);
+        try {
+            const user = await User.findOne({username});
+            if(user) {
+                const isvalid = await bcrypt.compare(password, user.password);
+                if(isvalid) {
+                setAuthCookie(Response,{userID:user._id});
                 return Response.status(200).json({username, userID: user._id});
             }
             else {
@@ -103,6 +114,26 @@ export const login = async(Request,Response)=>{
         }
         return Response.status(401).json({message: "Invalid Credentials!"})
      } catch (error) {
+        console.log("Error yahan hai!");
+        console.log(error);
         Response.status(500).json({message: "Internal Server Error!"})
+    }
+    }
+}
+
+export async function getMyProfile(Request,Response) {
+    const {userID} = Request.body;
+
+    try {
+        const user = await User.findById(userID,{username:1, email:1, role:1, queries:1});
+        if(user) {
+            Response.status(200).json(user);
+        }
+        else {
+            clearAuthCookie(Response);
+            Response.status(401).json({message: "Unauthorized Profile!"});
+        }
+    } catch (error) {
+        InternalServerError(Response,error);
     }
 }
