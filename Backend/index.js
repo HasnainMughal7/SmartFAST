@@ -14,10 +14,9 @@ const PORT = Number(process.env.PORT) || 7777;
 
 
 //middlewares
-app.use(cors());
+app.use(cors({origin: ["http://localhost:5173"]}));
 app.use(express.json());
 app.use(cookieParser());
-
 
 // Routes
 app.use("/api/auth", auth);

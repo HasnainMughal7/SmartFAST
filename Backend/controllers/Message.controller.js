@@ -5,11 +5,9 @@ import {InternalServerError} from "../Errors/error.js";
 export async function addMessage(Request,Response) {
     const {content, userID} = Request.body;
     
-    console.log(userID)
+    console.log(userID);
     try {
         const user = await User.findById(userID);
-
-        console.log("User",user);
         const message = await Message.create({
             content,
             userID: user.id,
