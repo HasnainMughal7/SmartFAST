@@ -38,10 +38,6 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
   const [alerts, setAlerts] = useState<Alert[]>(MOCK_ALERTS);
 
   const Login = async(username: string, password: string) => {
-    // const foundUser = MOCK_USERS.find(u => u.email === email && u.password === password);
-    // if (!foundUser) return;
-    // setUser(foundUser);
-    // localStorage.setItem('user', JSON.stringify(foundUser));
     const {data} = await (axios.post(`${host}/api/auth/login`, {username,password}));
     if(data) {
       setUser(data);

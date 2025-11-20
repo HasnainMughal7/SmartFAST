@@ -12,9 +12,22 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 7777;
 
-
+const corsOptions = {
+  // 1. Specify the exact origin(s) allowed to access the API
+  origin: ["http://localhost:5173"], 
+  
+  // 2. 🔑 CRITICAL: Allows the browser to send cookies, 
+  // Authorization headers, and SSL client certificates.
+  credentials: true, 
+  
+  // 3. Optional: Specify allowed HTTP methods (usually defaults are fine)
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  
+  // 4. Optional: Allow setting a preflight cache duration
+  maxAge: 604800 
+};
 //middlewares
-app.use(cors({origin: ["http://localhost:5173"]}));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
